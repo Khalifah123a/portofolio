@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portofolio</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: #000;
+      color: #fff;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Animated Background */
+    #particles-canvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+
+    .animated-bg {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%; z-index: 0;
+      background: linear-gradient(135deg, #000 0%, #0a1628 30%, #0d1f3c 60%, #000 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 20s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(100px); opacity: 0.12;
+      z-index: 0; pointer-events: none;
+      animation: floatOrb 25s ease-in-out infinite;
+    }
+    .orb:nth-child(1) { width: 500px; height: 500px; background: #4da6ff; top: -15%; left: -10%; animation-delay: 0s; }
+    .orb:nth-child(2) { width: 400px; height: 400px; background: #1a6bb5; bottom: -15%; right: -10%; animation-delay: -8s; }
+    .orb:nth-child(3) { width: 300px; height: 300px; background: #fff; top: 40%; left: 60%; opacity: 0.05; animation-delay: -16s; }
+
+    @keyframes floatOrb {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(60px, -60px) scale(1.15); }
+      66% { transform: translate(-40px, 40px) scale(0.85); }
+    }
+
+    .container {
+      position: relative; z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Nav */
+    nav {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 24px 0;
+    }
+    .logo { font-size: 1.2rem; font-weight: 600; color: #4da6ff; text-decoration: none; letter-spacing: -0.5px; }
+    nav ul { list-style: none; display: flex; gap: 32px; }
+    nav ul li a { color: #8899bb; text-decoration: none; font-size: 0.9rem; transition: color 0.3s; font-weight: 500; }
+    nav ul li a:hover { color: #4da6ff; }
+
+    /* Hero */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 80px 0;
+    }
+    .hero-content { max-width: 700px; }
+    .hero h1 {
+      font-size: 3.8rem; font-weight: 700; margin-bottom: 8px;
+      letter-spacing: -1.5px;
+      color: #fff;
+    }
+    .hero .subtitle { font-size: 1.2rem; color: #4da6ff; margin-bottom: 16px; font-weight: 500; }
+    .hero .about-text { font-size: 1rem; color: #8899bb; max-width: 550px; margin-bottom: 32px; line-height: 1.8; }
+
+    .hero-badges { display: flex; flex-wrap: wrap; gap: 10px; }
+    .badge {
+      background: rgba(77, 166, 255, 0.08);
+      border: 1px solid rgba(77, 166, 255, 0.15);
+      color: #7bbaff;
+      padding: 6px 18px; border-radius: 100px;
+      font-size: 0.85rem; font-weight: 500; transition: all 0.3s;
+    }
+    .badge:hover { background: rgba(77, 166, 255, 0.15); }
+
+    /* Section */
+    section { padding: 100px 0; }
+    .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 40px; color: #fff; letter-spacing: -0.5px; }
+    .section-title span { color: #4da6ff; }
+
+    /* Projects Grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .project-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 28px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .project-card:hover {
+      border-color: rgba(77, 166, 255, 0.2);
+      background: rgba(77, 166, 255, 0.04);
+      transform: translateY(-3px);
+    }
+    .project-card .icon { font-size: 2rem; margin-bottom: 12px; }
+    .project-card h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 8px; color: #fff; }
+    .project-card p { color: #667799; font-size: 0.9rem; line-height: 1.6; }
+    .project-card .tech-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .project-card .tech-tags span {
+      background: rgba(77, 166, 255, 0.08);
+      color: #7bbaff; padding: 3px 11px; border-radius: 100px; font-size: 0.75rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(12px);
+      z-index: 1000; justify-content: center; align-items: center; padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: #0a1628;
+      border: 1px solid rgba(77, 166, 255, 0.12);
+      border-radius: 20px;
+      max-width: 98vw; width: 100%;
+      max-height: 94vh;
+      overflow: hidden;
+      position: relative;
+      animation: modalIn 0.3s ease;
+      display: flex;
+      flex-direction: row;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(15px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-close {
+      position: absolute; top: 12px; right: 14px;
+      background: none; border: none;
+      color: #667799; font-size: 1.6rem;
+      cursor: pointer; transition: color 0.3s; line-height: 1; z-index: 10;
+    }
+    .modal-close:hover { color: #fff; }
+
+    .modal .modal-model {
+      flex: 1.5;
+      min-height: 550px;
+      min-width: 450px;
+      background: #050a14;
+      position: relative;
+      cursor: grab;
+    }
+    .modal .modal-model:active { cursor: grabbing; }
+    .modal .modal-model canvas { display: block; width: 100% !important; height: 100% !important; }
+
+    .modal .modal-info {
+      width: 460px;
+      padding: 44px;
+      overflow-y: auto;
+      border-left: 1px solid rgba(77, 166, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+    }
+    .modal .modal-info .modal-icon { font-size: 2rem; margin-bottom: 8px; }
+    .modal .modal-info h2 { font-size: 1.3rem; color: #fff; margin-bottom: 12px; font-weight: 600; }
+    .modal .modal-info p { color: #667799; line-height: 1.8; margin-bottom: 16px; font-size: 0.9rem; flex: 1; }
+    .modal .modal-info .modal-tech h4 { color: #4da6ff; margin-bottom: 8px; font-size: 0.85rem; font-weight: 500; }
+    .modal .modal-info .modal-tech .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .modal .modal-info .modal-tech .tags span {
+      background: rgba(77, 166, 255, 0.08);
+      color: #7bbaff; padding: 4px 12px; border-radius: 100px; font-size: 0.75rem;
+    }
+    .viewer-hint {
+      position: absolute; bottom: 12px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.1); font-size: 0.7rem;
+      pointer-events: none; user-select: none;
+    }
+
+    /* Floating Assistant */
+    .floating-assistant {
+      position: fixed; bottom: 28px; right: 28px;
+      z-index: 999;
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: #4da6ff;
+      border: none;
+      color: #fff;
+      font-size: 1.4rem;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(77, 166, 255, 0.3);
+      transition: all 0.3s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .floating-assistant:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 30px rgba(77, 166, 255, 0.5);
+    }
+
+    /* Assistant Modal */
+    .assistant-modal .modal {
+      max-width: 460px;
+      flex-direction: column;
+      text-align: center;
+    }
+    .assistant-modal .modal p { text-align: left; border-left: none; color: #667799; }
+    .assistant-modal .modal .ai-icon { font-size: 3.5rem; margin-bottom: 8px; margin-top: 16px; }
+
+    /* Footer */
+    footer {
+      text-align: center; padding: 32px 0;
+      color: #333d55; font-size: 0.85rem;
+      border-top: 1px solid rgba(255,255,255,0.03);
+      position: relative; z-index: 1;
+    }
+
+    @media (max-width: 768px) {
+      .modal { flex-direction: column; max-height: 95vh; border-radius: 14px; }
+      .modal .modal-model { min-height: 280px; min-width: auto; }
+      .modal .modal-info { width: 100%; border-left: none; border-top: 1px solid rgba(77,166,255,0.08); padding: 28px; }
+      .hero h1 { font-size: 2.4rem; }
+      nav ul { gap: 20px; }
+      nav ul li a { font-size: 0.8rem; }
+      .projects-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="animated-bg"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <canvas id="particles-canvas"></canvas>
+
+  <div class="container">
+    <nav>
+      <a href="#" class="logo">Portofolio</a>
+      <ul>
+        <li><a href="#proyek">Proyek</a></li>
+        <li><a href="#tentang">Tentang</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <section class="hero" id="tentang">
+    <div class="container">
+      <div class="hero-content">
+        <h1>Khaleefa Faizullah A.M.</h1>
+        <p class="subtitle">Mobile Developer &amp; 3D Designer</p>
+        <p class="about-text">
+          Mengembangkan aplikasi mobile dan model 3D dengan fokus pada pengalaman pengguna yang bersih dan fungsional. Berbasis di Indonesia.
+        </p>
+        <div class="hero-badges">
+          <span class="badge">Flutter &amp; Dart</span>
+          <span class="badge">Kotlin &amp; Android</span>
+          <span class="badge">Blender &amp; 3D</span>
+          <span class="badge">UI/UX Design</span>
+          <span class="badge">Firebase</span>
+          <span class="badge">Unreal Engine</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="proyek">
+    <div class="container">
+      <h2 class="section-title">Proyek <span>Terbaru</span></h2>
+      <div class="projects-grid">
+        <div class="project-card" data-project="0">
+          <div class="icon">&#128214;</div>
+          <h3>Manga Mobile App</h3>
+          <p>Aplikasi manga dengan fitur offline, bookmark, dan rekomendasi personal.</p>
+          <div class="tech-tags">
+            <span>Flutter</span>
+            <span>Firebase</span>
+            <span>REST API</span>
+          </div>
+        </div>
+        <div class="project-card" data-project="1">
+          <div class="icon">&#128421;</div>
+          <h3>Android NAS Server</h3>
+          <p>Server NAS Android untuk penyimpanan dan streaming file jarak jauh.</p>
+          <div class="tech-tags">
+            <span>Android</span>
+            <span>Kotlin</span>
+            <span>Samba</span>
+          </div>
+        </div>
+        <div class="project-card" data-project="2">
+          <div class="icon">&#128752;</div>
+          <h3>3D Model - Karakter</h3>
+          <p>Model karakter 3D dengan rigging dan tekstur PBR untuk game.</p>
+          <div class="tech-tags">
+            <span>Blender</span>
+            <span>Substance Painter</span>
+            <span>Unity</span>
+          </div>
+        </div>
+        <div class="project-card" data-project="3">
+          <div class="icon">&#127748;</div>
+          <h3>3D Model - Environment</h3>
+          <p>Lingkungan 3D open-world dengan pencahayaan dinamis.</p>
+          <div class="tech-tags">
+            <span>Blender</span>
+            <span>Unreal Engine</span>
+            <span>Quixel Mixer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      &copy; 2026 Khaleefa Faizullah A.M.
+    </div>
+  </footer>
+
+  <!-- Project Modal -->
+  <div class="modal-overlay" id="projectModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeProjectModal()">&times;</button>
+      <div class="modal-model" id="modalViewer">
+        <div class="viewer-hint">Seret untuk memutar</div>
+      </div>
+      <div class="modal-info">
+        <div class="modal-icon" id="modalIcon"></div>
+        <h2 id="modalTitle"></h2>
+        <p id="modalDesc"></p>
+        <div class="modal-tech">
+          <h4>Teknologi</h4>
+          <div class="tags" id="modalTags"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Assistant -->
+  <button class="floating-assistant" onclick="openAssistantModal()">&#129302;</button>
+
+  <!-- Assistant Modal -->
+  <div class="modal-overlay assistant-modal" id="assistantModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeAssistantModal()">&times;</button>
+      <div class="ai-icon">&#129302;</div>
+      <h2 style="color:#fff;font-size:1.2rem;">Ada yang bisa dibantu?</h2>
+      <p style="margin-top:8px;">
+        &#10003; Info pengalaman dan keahlian<br>
+        &#10003; Detail proyek<br>
+        &#10003; Kolaborasi<br>
+        &#10003; Pertanyaan teknis
+      </p>
+      <p style="margin-top:16px;">
+        Email: <strong style="color:#4da6ff;">khaleefa.faizullah@email.com</strong>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Particles
+    const c = document.getElementById('particles-canvas');
+    const x = c.getContext('2d');
+    let p = [];
+    function r() { c.width = window.innerWidth; c.height = window.innerHeight; }
+    r(); window.addEventListener('resize', r);
+
+    class Pt {
+      constructor() {
+        this.x = Math.random() * c.width;
+        this.y = Math.random() * c.height;
+        this.s = Math.random() * 2 + 0.5;
+        this.sx = (Math.random() - 0.5) * 0.4;
+        this.sy = (Math.random() - 0.5) * 0.4;
+        this.o = Math.random() * 0.4 + 0.1;
+      }
+      up() { this.x += this.sx; this.y += this.sy; if (this.x < 0 || this.x > c.width) this.sx *= -1; if (this.y < 0 || this.y > c.height) this.sy *= -1; }
+      dr() { x.fillStyle = `rgba(77, 166, 255, ${this.o})`; x.beginPath(); x.arc(this.x, this.y, this.s, 0, Math.PI * 2); x.fill(); }
+    }
+
+    function cp() { p = []; const cnt = Math.min(60, Math.floor(c.width * c.height / 20000)); for (let i = 0; i < cnt; i++) p.push(new Pt()); }
+    cp(); window.addEventListener('resize', () => { r(); cp(); });
+
+    function dl() {
+      for (let i = 0; i < p.length; i++)
+        for (let j = i + 1; j < p.length; j++) {
+          const dx = p[i].x - p[j].x, dy = p[i].y - p[j].y, d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 140) { x.strokeStyle = `rgba(77, 166, 255, ${0.04 * (1 - d / 140)})`; x.lineWidth = 0.5; x.beginPath(); x.moveTo(p[i].x, p[i].y); x.lineTo(p[j].x, p[j].y); x.stroke(); }
+        }
+    }
+    function an() { x.clearRect(0, 0, c.width, c.height); p.forEach(a => { a.up(); a.dr(); }); dl(); requestAnimationFrame(an); }
+    an();
+
+    // Projects
+    const projects = [
+      { icon: '&#128214;', title: 'Manga Mobile App', description: 'Aplikasi mobile untuk membaca dan mengoleksi manga favorit. Dibangun menggunakan Flutter dengan clean architecture. Fitur utama: katalog manga dengan pencarian genre/tag, bookmark otomatis, mode offline, notifikasi chapter baru, rekomendasi personal. Mendukung berbagai format gambar dengan reader yang nyaman.', tags: ['Flutter', 'Firebase', 'REST API', 'Hive', 'Riverpod', 'Dart'], modelType: 'book' },
+      { icon: '&#128421;', title: 'Android NAS Server', description: 'Server NAS berbasis Android untuk penyimpanan dan akses file jarak jauh. Dibangun dengan Kotlin, menggunakan protokol Samba/CIFS untuk kompatibilitas lintas platform. Fitur: streaming media, backup kamera otomatis, enkripsi end-to-end, multi-user, antarmuka web.', tags: ['Android', 'Kotlin', 'Samba', 'CIFS', 'Jetpack Compose', 'OkHttp'], modelType: 'server' },
+      { icon: '&#128752;', title: '3D Model - Karakter', description: 'Model karakter 3D untuk game dan animasi. Dari konsep art hingga render final: high-poly sculpting, retopology, UV mapping, tekstur PBR di Substance Painter. Dilengkapi rigging lengkap dengan facial rig, siap untuk Unity atau Unreal Engine.', tags: ['Blender', 'Substance Painter', 'Unity', 'ZBrush', 'Marmoset', 'Mixamo'], modelType: 'character' },
+      { icon: '&#127748;', title: '3D Model - Environment', description: 'Lingkungan 3D open-world dengan pencahayaan dinamis dan performa optimal. Terrain generation procedural, vegetation scattering, material blending, sistem cuaca dinamis. Multi-level LOD dan texture atlasing untuk performa real-time.', tags: ['Blender', 'Unreal Engine', 'Quixel Mixer', 'SpeedTree', 'World Creator', 'Nanite'], modelType: 'terrain' }
+    ];
+
+    function buildModel(type) {
+      const g = new THREE.Group();
+      switch (type) {
+        case 'book': {
+          const book = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.15, 2.2), new THREE.MeshStandardMaterial({ color: 0x4da6ff, metalness: 0.2, roughness: 0.5 })); book.position.y = 0; g.add(book);
+          const spine = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.2, 0.1), new THREE.MeshStandardMaterial({ color: 0x3a8ce0, metalness: 0.3, roughness: 0.4 })); spine.position.set(0, 0, -1.15); g.add(spine);
+          const pages = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.02, 2.1), new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0, roughness: 0.8 })); pages.position.set(0, 0.085, 0); g.add(pages);
+          for (let i = -0.8; i <= 0.8; i += 0.4) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 1.8), new THREE.MeshStandardMaterial({ color: 0x8899bb })); l.position.set(i, 0.09, 0.1); g.add(l); }
+          const cover = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.02, 2.2), new THREE.MeshStandardMaterial({ color: 0x2a7acc, metalness: 0.3, roughness: 0.4 })); cover.position.y = 0.085; g.add(cover);
+          break;
+        }
+        case 'server': {
+          const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.0, 1.2), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, metalness: 0.5, roughness: 0.4 })); body.position.y = 0; g.add(body);
+          const front = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.9, 0.05), new THREE.MeshStandardMaterial({ color: 0x0d1f3c, metalness: 0.4, roughness: 0.5 })); front.position.set(0, 0, 0.625); g.add(front);
+          for (let i = -0.7; i <= 0.7; i += 0.35) {
+            const slot = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.08, 0.02), new THREE.MeshStandardMaterial({ color: 0x2a3a5a })); slot.position.set(0, i, 0.64); g.add(slot);
+            const led = new THREE.Mesh(new THREE.CircleGeometry(0.04, 8), new THREE.MeshStandardMaterial({ color: 0x4da6ff, emissive: 0x4da6ff, emissiveIntensity: 0.5 })); led.position.set(0.7, i + 0.04, 0.64); g.add(led);
+          }
+          const vent = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.1), new THREE.MeshStandardMaterial({ color: 0x152338, metalness: 0.3, roughness: 0.6 })); vent.position.set(0, -0.9, 0.55); g.add(vent);
+          break;
+        }
+        case 'character': {
+          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 1.2, 8), new THREE.MeshStandardMaterial({ color: 0x4da6ff, metalness: 0.2, roughness: 0.4 })); body.position.y = 0.6; g.add(body);
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffccaa, metalness: 0, roughness: 0.4 })); head.position.y = 1.3; g.add(head);
+          const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.4 })); armL.position.set(-0.55, 0.85, 0); armL.rotation.z = 0.2; g.add(armL);
+          const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.4 })); armR.position.set(0.55, 0.85, 0); armR.rotation.z = -0.2; g.add(armR);
+          const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshStandardMaterial({ color: 0x222244, emissive: 0x4da6ff, emissiveIntensity: 0.4 })); eyeL.position.set(-0.15, 1.4, 0.35); g.add(eyeL);
+          const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshStandardMaterial({ color: 0x222244, emissive: 0x4da6ff, emissiveIntensity: 0.4 })); eyeR.position.set(0.15, 1.4, 0.35); g.add(eyeR);
+          break;
+        }
+        case 'terrain': {
+          const ground = new THREE.Mesh(new THREE.PlaneGeometry(4, 4, 20, 20), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.9 }));
+          ground.rotation.x = -Math.PI / 2; ground.position.y = -0.2;
+          const pos = ground.geometry.attributes.position;
+          for (let i = 0; i < pos.count; i++) { const z = pos.getZ(i), x = pos.getX(i); pos.setY(i, Math.sin(x * 1.5) * 0.15 + Math.cos(z * 1.2) * 0.12 + Math.sin(x * 3 + z * 2) * 0.06); }
+          pos.needsUpdate = true; ground.geometry.computeVertexNormals(); g.add(ground);
+          for (let i = -1.2; i <= 1.2; i += 0.6)
+            for (let j = -1.2; j <= 1.2; j += 0.6) {
+              const h = Math.sin(i * 1.5) * 0.15 + Math.cos(j * 1.2) * 0.12 + Math.sin(i * 3 + j * 2) * 0.06;
+              const tree = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 6), new THREE.MeshStandardMaterial({ color: 0x2a5a3a })); tree.position.set(i, h + 0.15, j); g.add(tree);
+              const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.15, 6), new THREE.MeshStandardMaterial({ color: 0x4a3a2a })); trunk.position.set(i, h - 0.07, j); g.add(trunk);
+            }
+          break;
+        }
+      }
+      return g;
+    }
+
+    // Modal
+    let mr, mc, ma;
+
+    function openProjectModal(idx) {
+      const p = projects[idx];
+      if (ma) cancelAnimationFrame(ma);
+      document.getElementById('modalIcon').innerHTML = p.icon;
+      document.getElementById('modalTitle').textContent = p.title;
+      document.getElementById('modalDesc').textContent = p.description;
+      const tc = document.getElementById('modalTags'); tc.innerHTML = '';
+      p.tags.forEach(t => { const s = document.createElement('span'); s.textContent = t; tc.appendChild(s); });
+      document.getElementById('projectModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+
+      const v = document.getElementById('modalViewer');
+      const w = v.clientWidth || 400, h = v.clientHeight || 380;
+      if (mr) { mr.dispose(); v.innerHTML = '<div class="viewer-hint">Seret untuk memutar</div>'; }
+
+      const sc = new THREE.Scene(); sc.background = new THREE.Color(0x050a14);
+      const cam = new THREE.PerspectiveCamera(40, w / h, 0.1, 100); cam.position.set(4, 3, 6);
+      mr = new THREE.WebGLRenderer({ antialias: true }); mr.setSize(w, h); mr.setPixelRatio(Math.min(window.devicePixelRatio, 2)); v.appendChild(mr.domElement);
+      sc.add(new THREE.AmbientLight(0x404060, 0.6));
+      const d1 = new THREE.DirectionalLight(0x4da6ff, 1.2); d1.position.set(5, 10, 7); sc.add(d1);
+      const d2 = new THREE.DirectionalLight(0xffffff, 0.3); d2.position.set(-5, -2, -5); sc.add(d2);
+      const mesh = buildModel(p.modelType); sc.add(mesh);
+      mc = new THREE.OrbitControls(cam, mr.domElement);
+      mc.enableDamping = true; mc.dampingFactor = 0.12;
+      mc.autoRotate = true; mc.autoRotateSpeed = 1.0;
+      mc.minDistance = 2; mc.maxDistance = 12; mc.target.set(0, 0, 0);
+      let art;
+      mc.addEventListener('start', () => { mc.autoRotate = false; clearTimeout(art); });
+      mc.addEventListener('end', () => { clearTimeout(art); art = setTimeout(() => { mc.autoRotate = true; }, 3000); });
+      function an() { ma = requestAnimationFrame(an); mc.update(); mr.render(sc, cam); }
+      an();
+      document.getElementById('projectModal')._cleanup = () => { if (ma) cancelAnimationFrame(ma); if (mc) mc.dispose(); if (mr) { mr.dispose(); v.innerHTML = '<div class="viewer-hint">Seret untuk memutar</div>'; } document.body.style.overflow = ''; };
+    }
+    function closeProjectModal() { const o = document.getElementById('projectModal'); o.classList.remove('active'); if (o._cleanup) { o._cleanup(); o._cleanup = null; } }
+    document.querySelectorAll('.project-card').forEach(card => { card.addEventListener('click', function() { openProjectModal(parseInt(this.dataset.project)); }); });
+
+    document.querySelectorAll('.modal-overlay').forEach(o => { o.addEventListener('click', function(e) { if (e.target === this) { if (this.id === 'projectModal') closeProjectModal(); if (this.id === 'assistantModal') closeAssistantModal(); } }); });
+
+    function openAssistantModal() { document.getElementById('assistantModal').classList.add('active'); document.body.style.overflow = 'hidden'; }
+    function closeAssistantModal() { document.getElementById('assistantModal').classList.remove('active'); document.body.style.overflow = ''; }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (document.getElementById('projectModal').classList.contains('active')) closeProjectModal(); if (document.getElementById('assistantModal').classList.contains('active')) closeAssistantModal(); } });
+    document.querySelectorAll('nav a[href^="#"]').forEach(a => { a.addEventListener('click', e => { e.preventDefault(); const t = document.querySelector(a.getAttribute('href')); if (t) t.scrollIntoView({ behavior: 'smooth' }); }); });
+
+    let rt;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (mr && document.getElementById('projectModal').classList.contains('active')) { const v = document.getElementById('modalViewer'); const w = v.clientWidth, h = v.clientHeight; if (w > 0 && h > 0) { const cam = mc.object; cam.aspect = w / h; cam.updateProjectionMatrix(); mr.setSize(w, h); } } }, 300); });
+  </script>
+</body>
+</html>
